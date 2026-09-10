@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 180" width="100%" height="100%" fill="none">
+  <!-- MixProduct Official Logo Recreation (B&W) -->
+  <g id="emblem" transform="translate(70, 8)">
+    <!-- Left Phone (tilted) -->
+    <g transform="translate(34, 48) rotate(-14) translate(-34, -48)">
+      <rect x="20" y="8" width="34" height="60" rx="6" fill="#FFFFFF" stroke="#080808" stroke-width="2.5" />
+      <rect x="23" y="14" width="28" height="46" rx="3.5" fill="#080808" />
+      <!-- Camera punch hole / speaker -->
+      <circle cx="37" cy="11.5" r="1.5" fill="#080808" />
+    </g>
+    
+    <!-- Right Phone (straight/subtle tilt) -->
+    <g transform="translate(86, 44) rotate(4) translate(-86, -44)">
+      <rect x="68" y="4" width="36" height="64" rx="6" fill="#FFFFFF" stroke="#080808" stroke-width="2.5" />
+      <rect x="71" y="10" width="30" height="50" rx="3.5" fill="#080808" />
+      <!-- Notch / pill -->
+      <rect x="80" y="7" width="12" height="2.5" rx="1.2" fill="#080808" />
+    </g>
+
+    <!-- Open Box / Flaps in 3D perspective -->
+    <!-- Left flap -->
+    <polygon points="12,50 38,55 36,44 10,40" fill="#E2E2E2" />
+    <!-- Right flap -->
+    <polygon points="128,50 102,55 104,44 130,40" fill="#D0D0D0" />
+    <!-- Front left flap -->
+    <polygon points="38,55 70,64 68,54 36,48" fill="#F0F0F0" />
+    <!-- Front right flap -->
+    <polygon points="102,55 70,64 72,54 104,48" fill="#FFFFFF" />
+
+    <!-- Main Box Front Faces -->
+    <!-- Left front face -->
+    <polygon points="16,52 70,68 70,98 16,78" fill="#E8E8E8" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round" />
+    <!-- Right front face -->
+    <polygon points="70,68 124,52 124,78 70,98" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round" />
+
+    <!-- Inner fold divider / crease -->
+    <line x1="70" y1="68" x2="70" y2="98" stroke="#D5D5D5" stroke-width="2" />
+  </g>
+
+  <!-- Typography: Mix Product -->
+  <text x="140" y="148" 
+        text-anchor="middle" 
+        fill="#FFFFFF" 
+        font-family="'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" 
+        font-weight="800" 
+        font-size="34" 
+        letter-spacing="-0.5">Mix Product</text>
+</svg>
