@@ -41,15 +41,14 @@ function telegramApiPlugin() {
         if (req.method === 'GET') {
           const isConfigured = Boolean(
             process.env.TELEGRAM_BOT_TOKEN && 
-            process.env.TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE' &&
-            process.env.TELEGRAM_CHAT_ID &&
-            process.env.TELEGRAM_CHAT_ID !== 'YOUR_CHAT_ID_HERE'
+            process.env.TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE'
           );
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({
             status: 'ok',
             store: 'MixProduct',
-            admin: '@Irkinov_Shuhratbek',
+            bot: '@MixProduct_UzBot',
+            chatId: process.env.TELEGRAM_CHAT_ID || '5605837016',
             telegramIntegrationReady: isConfigured,
           }));
         } else {

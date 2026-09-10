@@ -1,8 +1,18 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+const DEFAULT_CHAT_ID = '5605837016';
+
 /**
  * Server-side Telegram Notification Service for MixProduct
  * 
- * Securely delivers customer requests from the website form to the Telegram chat
- * where @Irkinov_Shuhratbek is the administrator.
+ * Securely delivers customer requests from the website form to the Telegram bot
+ * @MixProduct_UzBot in chat ID 5605837016.
  * 
  * SECURITY:
  * TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are strictly loaded from server environment
@@ -10,6 +20,9 @@
  */
 
 export async function sendTelegramNotification({ name, phone, message }) {
+  // Reload environment variables so updates to local .env are picked up immediately
+  dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
+
   // 1. Validation
   const trimmedName = String(name || '').trim();
   const trimmedPhone = String(phone || '').trim();
@@ -37,28 +50,30 @@ export async function sendTelegramNotification({ name, phone, message }) {
 
   // 2. Check server environment credentials
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const envChatId = process.env.TELEGRAM_CHAT_ID;
+  const chatId = (envChatId && envChatId.trim() !== '' && envChatId !== 'YOUR_CHAT_ID_HERE')
+    ? envChatId.trim()
+    : DEFAULT_CHAT_ID;
 
-  const isConfigured = 
+  const isConfigured = Boolean(
     botToken && 
     botToken.trim() !== '' && 
-    botToken !== 'YOUR_BOT_TOKEN_HERE' && 
-    chatId && 
-    chatId.trim() !== '' && 
-    chatId !== 'YOUR_CHAT_ID_HERE';
+    botToken !== 'YOUR_BOT_TOKEN_HERE' &&
+    chatId
+  );
 
   if (!isConfigured) {
     // REALISTIC BEHAVIOR: DO NOT FAKE INTEGRATION
-    console.warn('[MixProduct Backend] Telegram credentials missing in .env file (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID).');
+    console.warn('[MixProduct Backend] Telegram credentials missing in .env file (TELEGRAM_BOT_TOKEN).');
     return {
       status: 503,
       success: false,
       error: 'CONFIG_MISSING',
-      message: 'Интеграция с Telegram ожидает настройки: в файле .env на сервере не заданы TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID для администратора @Irkinov_Shuhratbek.',
+      message: 'Интеграция с Telegram ожидает настройки: в файле .env на сервере не задан TELEGRAM_BOT_TOKEN для бота @MixProduct_UzBot.',
       details: {
-        admin: '@Irkinov_Shuhratbek',
-        storeChannel: '@mixproduct_uz',
-        requiredEnv: ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID']
+        bot: '@MixProduct_UzBot',
+        chatId: chatId,
+        requiredEnv: ['TELEGRAM_BOT_TOKEN']
       }
     };
   }
@@ -76,43 +91,77 @@ export async function sendTelegramNotification({ name, phone, message }) {
     second: '2-digit',
   }).format(now);
 
-  const telegramText = [
-    '🛍 *НОВАЯ ЗАЯВКА — MIXPRODUCT*',
+  const messageContent = trimmedMessage || 'Не указан';
+
+  const telegramHtml = [
+    '🛍 <b>НОВАЯ ЗАЯВКА — MIXPRODUCT</b>',
     '',
-    `*Имя:* ${escapeMarkdown(trimmedName)}`,
-    `*Телефон:* ${escapeMarkdown(trimmedPhone)}`,
+    `<b>Имя:</b> ${escapeHtml(trimmedName)}`,
+    `<b>Телефон:</b> ${escapeHtml(trimmedPhone)}`,
+    `<b>Запрос:</b> ${escapeHtml(messageContent)}`,
+    `<b>Дата:</b> ${escapeHtml(formattedDate)}`,
+    '<b>Источник:</b> Сайт MixProduct'
+  ].join('\n');
+
+  const telegramPlain = [
+    '🛍 НОВАЯ ЗАЯВКА — MIXPRODUCT',
     '',
-    '*Запрос:*',
-    escapeMarkdown(trimmedMessage || 'Консультация по наличию и ценам'),
-    '',
-    '*Дата:*',
-    `${formattedDate} (Ташкент)`,
-    '',
-    '*Источник:*',
-    'Сайт MixProduct'
+    `Имя: ${trimmedName}`,
+    `Телефон: ${trimmedPhone}`,
+    `Запрос: ${messageContent}`,
+    `Дата: ${formattedDate}`,
+    'Источник: Сайт MixProduct'
   ].join('\n');
 
   try {
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const response = await fetch(telegramUrl, {
+    let response = await fetch(telegramUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: telegramText,
-        parse_mode: 'Markdown'
+        text: telegramHtml,
+        parse_mode: 'HTML'
       })
     });
 
-    const data = await response.json();
+    let data = await response.json();
+
+    // If HTML parsing fails for any reason, fallback to plain text format
+    if (!data.ok && data.description && data.description.toLowerCase().includes('parse')) {
+      response = await fetch(telegramUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: telegramPlain
+        })
+      });
+      data = await response.json();
+    }
 
     if (!data.ok) {
       console.error('[MixProduct Backend] Telegram API error:', data);
+      let humanMessage = `Ошибка Telegram API: ${data.description || 'Не удалось отправить сообщение в Telegram'}`;
+
+      if (data.description && data.description.toLowerCase().includes('blocked by the user')) {
+        humanMessage = `Бот заблокирован пользователем или ещё не активирован. Владелец магазина (Chat ID: ${chatId}) должен открыть бота в Telegram и нажать «Старт» (/start).`;
+      } else if (data.description && data.description.toLowerCase().includes('chat not found')) {
+        humanMessage = `Чат с ID ${chatId} не найден. Владелец магазина должен сначала открыть бота в Telegram и нажать «Старт» (/start).`;
+      } else if (data.error_code === 401 || (data.description && data.description.toLowerCase().includes('unauthorized'))) {
+        humanMessage = 'Недействительный TELEGRAM_BOT_TOKEN (Unauthorized). Токен был отозван или изменён в @BotFather. Пожалуйста, укажите актуальный токен в файле .env.';
+      }
+
       return {
         status: 502,
         success: false,
         error: 'TELEGRAM_API_ERROR',
-        message: `Ошибка Telegram API: ${data.description || 'Не удалось отправить сообщение'}`
+        message: humanMessage,
+        details: {
+          telegramError: data.description,
+          chatId: chatId,
+          errorCode: data.error_code
+        }
       };
     }
 
@@ -134,7 +183,9 @@ export async function sendTelegramNotification({ name, phone, message }) {
   }
 }
 
-function escapeMarkdown(text) {
-  // Escape basic markdown special characters for Telegram Markdown v1
-  return text.replace(/([_*`[])/g, '\\$1');
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }

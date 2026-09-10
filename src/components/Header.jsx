@@ -160,7 +160,7 @@ export default function Header() {
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 top-[57px] bg-[#080808]/98 backdrop-blur-xl z-40 lg:hidden flex flex-col justify-between p-6 border-t border-[#222222] animate-fadeIn">
+        <div className={`fixed inset-0 ${isScrolled ? 'top-[57px]' : 'top-[68px] sm:top-[72px]'} bg-[#080808]/98 backdrop-blur-xl z-40 lg:hidden flex flex-col justify-between p-6 border-t border-[#222222] animate-fadeIn`}>
           <nav className="flex flex-col space-y-4 pt-2">
             {NAV_LINKS.map((link) => (
               <a

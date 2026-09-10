@@ -3,7 +3,11 @@ import { STORE_INFO } from '../data/storeData';
 import { Phone, Send, MapPin, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 
-export default function Contact({ prefilledMessage = '' }) {
+export default function Contact({ 
+  prefilledMessage = '', 
+  selectedProduct = null, 
+  onClearSelectedProduct 
+}) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -13,14 +17,13 @@ export default function Contact({ prefilledMessage = '' }) {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [serverFeedback, setServerFeedback] = useState(null);
+
   const [prevPrefilledMessage, setPrevPrefilledMessage] = useState(prefilledMessage);
 
-  // Sync if prefilledMessage prop changes
+  // Adjust state during render when prefilledMessage prop changes
   if (prefilledMessage !== prevPrefilledMessage) {
     setPrevPrefilledMessage(prefilledMessage);
-    if (prefilledMessage) {
-      setFormData(prev => ({ ...prev, message: prefilledMessage }));
-    }
+    setFormData(prev => ({ ...prev, message: prefilledMessage }));
   }
 
   const validateForm = () => {
@@ -71,7 +74,12 @@ export default function Contact({ prefilledMessage = '' }) {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = { success: false, message: 'Некорректный ответ от сервера.' };
+      }
 
       if (response.ok && data.success) {
         setStatus('success');
@@ -81,8 +89,11 @@ export default function Contact({ prefilledMessage = '' }) {
           name: formData.name,
           phone: formData.phone
         });
-        // Reset form
+        // Reset form and selected model
         setFormData({ name: '', phone: '', message: '' });
+        if (typeof onClearSelectedProduct === 'function') {
+          onClearSelectedProduct();
+        }
       } else {
         // Backend returned error (e.g. CONFIG_MISSING or TELEGRAM_API_ERROR)
         setStatus('error');
@@ -247,6 +258,29 @@ export default function Contact({ prefilledMessage = '' }) {
                   />
                 </div>
               </div>
+
+              {/* Selected Product Badge */}
+              {selectedProduct && (
+                <div className="p-3 rounded-lg bg-[#161616] border border-[#C8A45D]/40 flex items-center justify-between gap-3 animate-fadeIn">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-[#C8A45D] flex-shrink-0" />
+                    <span className="text-xs text-[#8A8A8A] flex-shrink-0">Выбранная модель:</span>
+                    <span className="text-xs font-bold text-white truncate">{selectedProduct.name}</span>
+                  </div>
+                  {onClearSelectedProduct && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClearSelectedProduct();
+                        setFormData(prev => ({ ...prev, message: '' }));
+                      }}
+                      className="text-[11px] font-semibold text-[#8A8A8A] hover:text-[#C8A45D] transition-colors whitespace-nowrap flex-shrink-0"
+                    >
+                      Очистить
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Field: Message / Interested item */}
               <div className="space-y-1.5">

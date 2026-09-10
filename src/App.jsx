@@ -22,12 +22,18 @@ export default function App() {
   };
 
   const handleRequestProduct = (product) => {
+    if (!product) return;
     setSelectedProductForRequest(product);
     setContactPrefillMessage(`Здравствуйте! Меня интересует ${product.name}.`);
     const el = document.getElementById('contact');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleClearSelectedProduct = () => {
+    setSelectedProductForRequest(null);
+    setContactPrefillMessage('');
   };
 
   return (
@@ -72,6 +78,7 @@ export default function App() {
         <Contact 
           prefilledMessage={contactPrefillMessage} 
           selectedProduct={selectedProductForRequest} 
+          onClearSelectedProduct={handleClearSelectedProduct}
         />
       </main>
 

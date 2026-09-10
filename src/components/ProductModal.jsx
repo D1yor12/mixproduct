@@ -116,11 +116,18 @@ export default function ProductModal({ product, onClose, onRequestProduct }) {
         <div className="p-6 border-t border-[#1F1F1F] bg-[#0E0E0E] flex flex-col sm:flex-row items-center gap-3">
           <button
             type="button"
-            onClick={() => {
-              if (onRequestProduct) onRequestProduct(product);
-              onClose();
-              const el = document.getElementById('contact');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            onClick={(e) => {
+              if (e && typeof e.preventDefault === 'function') e.preventDefault();
+              if (typeof onRequestProduct === 'function' && product) {
+                onRequestProduct(product);
+              }
+              if (typeof onClose === 'function') {
+                onClose();
+              }
+              setTimeout(() => {
+                const el = document.getElementById('contact');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }, 50);
             }}
             className="flex items-center justify-center gap-2 w-full sm:flex-1 py-3 px-5 text-sm font-bold text-[#080808] bg-[#C8A45D] hover:bg-[#D8B873] rounded-lg transition-all duration-200 shadow-gold-sm"
           >

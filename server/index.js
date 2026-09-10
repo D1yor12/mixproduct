@@ -5,12 +5,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { sendTelegramNotification } from './telegram.js';
 
-// Load environment variables from .env
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
+
+// Load environment variables from .env
+dotenv.config({ path: path.resolve(projectRoot, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,15 +23,14 @@ app.use(express.json());
 app.get('/api/health', (req, res) => {
   const isConfigured = Boolean(
     process.env.TELEGRAM_BOT_TOKEN && 
-    process.env.TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE' &&
-    process.env.TELEGRAM_CHAT_ID &&
-    process.env.TELEGRAM_CHAT_ID !== 'YOUR_CHAT_ID_HERE'
+    process.env.TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE'
   );
 
   res.json({
     status: 'ok',
     store: 'MixProduct',
-    admin: '@Irkinov_Shuhratbek',
+    bot: '@MixProduct_UzBot',
+    chatId: process.env.TELEGRAM_CHAT_ID || '5605837016',
     telegramIntegrationReady: isConfigured,
   });
 });
@@ -56,7 +55,7 @@ app.post('/api/contact', async (req, res) => {
 const distPath = path.join(projectRoot, 'dist');
 app.use(express.static(distPath));
 
-app.get('*', (req, res, next) => {
+app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(distPath, 'index.html'), (err) => {
     if (err) next();
